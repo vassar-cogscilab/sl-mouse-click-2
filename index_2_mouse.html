@@ -59,7 +59,7 @@
   // experiment parameters
   var break_after_each_square = 200;
   var break_before_block = 500;
-  var block_length = 90000; // milliseconds
+  var block_length = 4000; // milliseconds
   var n_blocks = 8;
 
   // experiment grid
@@ -86,7 +86,7 @@
   // welcome message
   var consent_form = {
     type: 'button-response',
-    stimulus: "<p>This is a research project conducted at Vassar College. In this experiment, you will play a simple computer game in which you try to quickly click symbols that appear on your screen. Our experiment investigates how different factors related to this game change how quickly people play. The experiment will take approximately [15] minutes to complete. You will receive a payment of [£2.00 (about $2.50)] upon completion of the experiment. The data we collect during the experiment are not linked to potentially identifying information, including your account information on [Prolific]. These data will solely be used for research purposes. You are free to stop the experiment by closing your browser window at any time. If you have any questions, you can contact Dr. Joshua de Leeuw at jdeleeuw@vassar.edu.</p>" +
+    stimulus: "<p>This is a research project conducted at Vassar College. In this experiment, you will play a simple computer game in which you try to quickly click symbols that appear on your screen. Our experiment investigates how different factors related to this game change how quickly people play. The experiment will take approximately 15 minutes to complete. You will receive a payment of £2.00 (about $2.50) upon completion of the experiment. The data we collect during the experiment are not linked to potentially identifying information, including your account information on Prolific. These data will solely be used for research purposes. You are free to stop the experiment by closing your browser window at any time. If you have any questions, you can contact Dr. Joshua de Leeuw at jdeleeuw@vassar.edu.</p>" +
       "<p>By clicking “I agree”, you affirm that you are at least 18 years of age, which is the minimum age to participate in this study, and that you understand the nature of your participation in this research. If you do not wish to participate, please close this window.</p",
     choices: ['I agree.'],
     is_html: true
@@ -178,6 +178,7 @@
     timeline.push(timer_start);
 
     var test = {
+      data: {block: i},
       timeline: [{
           type: 'serial-reaction-time-mouse',
           grid: grid,
@@ -194,14 +195,10 @@
           },
           target_color: getColor,
           grid_square_size: square_size,
-          data: function(){
-            var d = {};
-            d.pair = order[current_idx];
-            d.direction = JSON.stringify(deltas[d.pair]);
-            d.target_type = data_predictable;
-            return d;
-          },
-          on_finish: function(){
+          on_finish: function(data){
+            data.pair = order[current_idx];
+            data.direction = JSON.stringify(deltas[data.pair]);
+            data.target_type = data_predictable;
             count_correct++;
             document.querySelector('#srt-correct-count').innerHTML = count_correct;
             if(data_predictable == 'predictable'){
@@ -223,6 +220,49 @@
       }
     }
     timeline.push(test);
+
+    var feedback = {
+      type: 'text',
+      choices: ['spacebar'],
+      text: function(){
+        clearInterval(timer_ticks);
+        var which_block = jsPsych.data.get().last(1).values()[0].block;
+        var data = jsPsych.data.get().filter({block: which_block});
+        var count = data.filter({correct: true}).count();
+        var msg = "<p>You clicked on <b>"+count+" blocks</b> that round.</p>";
+        if(which_block === 0){
+          msg += "<p>That's a good start. See if you can get more next round.</p>";
+          msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>"
+          high_score = count;
+          msg += "<p>Take a break if you need to, and press <b>spacebar</b> to continue when you are ready.</p>"
+        } else if(which_block !== (n_blocks - 1)) {
+          if(count >= high_score){
+            msg += "<p>That's your best score yet!</p>";
+            if((n_blocks - 1 - which_block) == 1){
+              msg += "<p>The next round will be the final round in the experiment.</p>"
+            } else {
+              msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>"
+            }
+            high_score = count;
+          } else {
+            msg += "<p>That's <b>"+(high_score-count)+ "</b> away from your best round.</p>";
+          }
+          msg += "<p>Take a break if you need to, and press <b>spacebar</b> to continue when you are ready.</p>"
+        } else {
+          if(count >= high_score){
+            msg += "<p>That's your best score yet!</p>";
+            high_score = count;
+          } else {
+            msg += "<p>That's <b>"+(high_score-count)+ "</b> away from your best round.</p>";
+          }
+          msg += "<p>Nice job, that was the last round!</p>";
+          msg += "<p>Press <b>spacebar</b> to continue.</p>"
+        }
+        return msg;
+      },
+      timing_post_trial: break_before_block
+    }
+    timeline.push(feedback);
   }
 
   jsPsych.init({
