@@ -61,6 +61,9 @@
   var break_before_block = 500;
   var block_length = 4000; // milliseconds
   var n_blocks = 8;
+  var condition = jspsych.randomization.sample([1,2,3],1);
+  var n_pairs;
+  var order_array;
 
   // experiment grid
   var grid_rows = 8;
@@ -91,7 +94,7 @@
     choices: ['I agree.'],
     is_html: true
   }
-  //timeline.push(consent_form);
+  timeline.push(consent_form);
 
   var welcome_block = {
     type: "text",
@@ -129,7 +132,19 @@
     [1, 0],
     [1, 1]
   ];
-  var order = jsPsych.randomization.shuffle([0, 1, 2, 3, 4, 5, 6, 7]);
+  if(condition == 1){
+    n_pairs = 4
+    order_array = [0,1,2,3]
+  } else if (condition == 2) {
+    n_pairs = 6
+    order_array = [0,1,2,3,4,5]
+  }
+  else if (condition == 3) {
+    n_pairs = 8
+    order_array = [0,1,2,3,4,5,6,7]
+  }
+  var deltas = jsPsych.randomization.sample(deltas, n_pairs);
+  var order = jsPsych.randomization.shuffle(order_array);
   var current_idx = 0;
 
   function getNextPredictor() {
@@ -197,7 +212,14 @@
           grid_square_size: square_size,
           on_finish: function(data){
             data.pair = order[current_idx];
-            data.direction = JSON.stringify(deltas[data.pair]);
+            if((deltas[delta.pair][0] == 0 || deltas[delta.pair][1] == 0) && data_predictable == 'predictable'){
+              data.cardinal=true
+            } else if (data_predictable == 'unpredictable') {
+              data.cardinal= null
+            }
+            else{
+              data.cardinal= false}
+            data.direction = JSON.stringify( deltas[delta.pair]);
             data.target_type = data_predictable;
             count_correct++;
             document.querySelector('#srt-correct-count').innerHTML = count_correct;
