@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="jsPsych/jspsych.js"></script>
+  <script src="jsPsych/plugins/jspsych-serial-reaction-time.js"></script>
+  <script src="jsPsych/plugins/jspsych-text.js"></script>
+  <script src="jsPsych/plugins/jspsych-button-response.js"></script>
+  <script src="jsPsych/plugins/jspsych-survey-text.js"></script>
+  <script src="jsPsych/plugins/jspsych-call-function.js"></script>
+  <script src="js/serverComm.js"></script>
+  <script src="jsPsych/plugins/jspsych-serial-reaction-time-mouse.js"></script>
+  <link rel="stylesheet" href="jsPsych/css/jspsych.css"></link>
+	<style>
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+    #jspsych-target { width: 100%; height: 100%;}
+    #srt-score { position: absolute; width: 100%; border-bottom: 1px solid #ddd; background-color: #fafafa; margin:0; text-align: center; display: none;}
+    #srt-score progress { width: 500px; }
+    #srt-score .srt-top { padding: 10px 75px; display: inline-block; font-family: 'Open Sans', 'Arial'; font-size: 16px; color: #333;}
+	</style>
+</head>
+<body>
+    <div id="srt-score">
+      <span class="srt-top">Correct responses: <span id="srt-correct-count">0</span></span>
+      <span class="srt-top">Time: <progress max="100" value="0" id="srt-timer"></progress></span>
+    </div>
+    <div id="jspsych-target"></div>
+</body>
+<script>
+	
+	// experiment parameters
+	var break_after_each_square = 200;
+	var break_before_block = 500;
+	var block_length = 90000; // milliseconds
+	var n_blocks = 8;
+	
+	// experiment grid
+    var grid_rows = 8;
+    var grid_cols = 8;
+    var square_size = 50;
+	
+    var grid = [];
+    var locations = [];
+
+    for(var i=0; i<grid_rows; i++){
+      grid.push([]);
+      for(var j=0; j<grid_cols; j++){
+        grid[i].push(1);
+        if(i>0 && i < grid_rows-1 && j > 0 && j < grid_cols - 1){
+          locations.push([i,j]);
+        }
+      }
+    }
+
+    // timer display and filling 
+  
+    var show_timer = {
+      type: 'call-function',
+      func: function(){
+        document.querySelector('#srt-score').style.display = 'block';
+      }
+    }
+  
+    var block_start_time;
+    var current_order;
+    var order_index;
+    var which_target;
+    var data_predictable;
+    var timer_ticks;
+    var count_correct;
+    var high_score = 0;
+
+
+	   for(var i=0; i<n_blocks; i++){
+
+	      var timer_start = {
+	        type: 'call-function',
+	        func: function(){
+	          current_order = jsPsych.randomization.shuffle(t_variables);
+	          order_index = 0;
+	          which_target = 'target1';
+	          data_predictable = 'unpredictable';
+	          count_correct = 0;
+	          document.querySelector('#srt-correct-count').innerHTML = count_correct;
+	          block_start_time = Date.now();
+	          timer_ticks = setInterval(function(){
+	            var proportion_time_elapsed = Math.floor((Date.now() - block_start_time) / block_length * 100);
+	            document.querySelector('#srt-timer').value = proportion_time_elapsed;
+	          }, 100)
+	        }
+	      }
+	  
+    var last_predictor = null;
+    var last_target = null;
+    var colors = ["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"];
+    var deltas = [[-1,-1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1,0], [1,1]];
+    var order = [0,1,2,3,4,5,6,7];
+    order = jsPsych.randomization.shuffle(order);
+    var current_idx = -1;
+	
+    function getNextPredictor(){
+      current_idx++;
+      if(current_idx >= order.length){
+        order = jsPsych.randomization.shuffle(order);
+        current_idx = 0;
+      }
+      var predictor = jsPsych.randomization.sample(locations, 1)[0];
+      if(last_target !== null){
+        while(predictor[0] == last_target[0] && predictor[1] == last_target[1]){
+          predictor = jsPsych.randomization.sample(locations, 1)[0];
+        }
+      }
+      last_predictor = predictor;
+      return predictor;
+    }
+	
+  function getNextTarget(){
+    var target = last_predictor.slice();
+    var d = deltas[order[current_idx]];
+    target[0] = target[0] + d[0];
+    target[1] = target[1] + d[1];
+    last_target = target;
+    return target;
+  }
+
+  function getColor(){
+    return colors[order[current_idx]];
+  }
+  
+	
+	var timeline = [];
+	
+	var consent_form = {
+		type: 'button-response',
+    	stimulus: "<p>This is a research project conducted at Vassar College. In this experiment, you will play a simple computer game in which you try to quickly click symbols that appear on your screen. Our experiment investigates how different factors related to this game change how quickly people play. The experiment will take approximately [15] minutes to complete. You will receive a payment of [£2.00 (about $2.50)] upon completion of the experiment. The data we collect during the experiment are not linked to potentially identifying information, including your account information on [Prolific]. These data will solely be used for research purposes. You are free to stop the experiment by closing your browser window at any time. If you have any questions, you can contact Dr. Joshua de Leeuw at jdeleeuw@vassar.edu.</p>" +
+      "<p>By clicking “I agree”, you affirm that you are at least 18 years of age, which is the minimum age to participate in this study, and that you understand the nature of your participation in this research. If you do not wish to participate, please close this window.</p",
+    	choices: ['I agree.'],
+    	is_html: true
+	}
+	timeline.push(consent_form);
+	
+	var welcome_block = {
+		type: "text",
+		text: "Hi there! Welcome to the experiment. Press B to begin.",
+		choices: ['b']
+	}
+	timeline.push(welcome_block);
+
+    var instructions_general = {
+  	  type: "text",
+  	  text: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on each square when it changes. For instance, for the following grid:</p>" +
+  	  jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1,1,1]], 80, [0,1], '#FF0000') +
+  		  "<p>You would click on the red square.</p>" +
+  		  "<p>The goal of the game is to click on as many squares as you can within the time limit.</p>" +
+  		  "<p>Press spacebar to continue when you are ready.</p>",
+  	  choices: ['spacebar']
+  	  }
+    timeline.push(instructions_general);
+  
+    var instructions_practice = {
+  	  type: "text",
+  	  text: "<p><b>Practice:</b></p>" +
+  	 "<p>Here's a quick practice round to get you used to the game. You will see four squares like these: </p>" +
+  	  jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1,1,1]], 80) +
+  	  "<p>Press spacebar to begin when you are ready.</p>",
+  	  choices: ['spacebar']
+    }
+    timeline.push(instructions_practice); 
+	
+    var practice_timeline = {
+    	timeline: [{
+          type: 'serial-reaction-time-mouse',
+          grid_square_size: 80,
+  		target: jsPsych.timelineVariable('target'),
+          grid: [1,1,1,1],
+  		target_color: jsPsych.randomization.shuffle(["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"]),
+    		timing_pre_target: break_after_each_square,
+        }],
+      randomize_order: true,
+  	repetitions: 12,
+    }
+    timeline.push(practice_timeline); 
+	 
+	var practice_debrief = {
+		
+	}
+	
+  var timeline_2 = {
+    timeline: [
+      {
+        type: 'serial-reaction-time-mouse',
+        grid: grid,
+        target: getNextPredictor,
+        target_color: getColor,
+        grid_square_size: square_size
+      },
+      {
+        type: 'serial-reaction-time-mouse',
+        grid: grid,
+        target: getNextTarget,
+        target_color: getColor,
+        grid_square_size: square_size
+      },
+    ],
+	
+  loop_function: function(){
+        if(Date.now() - block_start_time < block_length){
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+	
+  
+  timeline.push(timeline_2, show_timer, timer_start);
+  
+  var questionnare = {
+  	type: 'survey-text',
+  	preamble: "<p>The game is now over, but we have a short set of questions to ask you as the last part of the experiment.</p>",
+  	questions: ["What do you think the purpose of the experiment was?"],
+    data: {survey_part: 'purpose'},
+    rows: [5],
+    columns: [60]
+  };
+
+
+  var questionnare_2 = {
+  	type: 'survey-text',
+  	questions: ["During the experiment, did you notice any sequences or patterns between the squares? For instance, if you noticed that one of the keys below tended to come before another one in the grid, can you please click on them?" +
+     jsPsych.plugins['serial-reaction-time-mouse'].stimulus(grid), 
+    rows: [5],
+    columns: [60],
+    data: {survey_part: 'patterns'}
+  };
+
+  var questionnare_3 = {
+  	type: 'survey-text',
+  	questions: ["Do you have any additional comments for the researchers?"],
+    rows: [5],
+    columns: [60],
+    data: {survey_part: 'misc'}
+  };
+  timeline.push(questionnare, questionnare_2, questionnare_3);
+  
+  var final_debrief = {
+  	type: 'text',
+  	text: "<p>Thanks! In this experiment, we are studying how people learn new sequential patterns (like melodies in music or phrases in language). "+
+    "We’ll analyze your pattern of responses - particularly how fast you responded - to figure out if and when you learned different parts of the sequential "+
+    "patterns that you saw. If you felt like there wasn’t much of a pattern, don’t fret: different people saw different kinds of patterns in this experiment. "+
+    "Some people saw sequences with lots of repeating patterns, and others saw sequences with only a few repeating patterns. This variation will allow us to "+
+    "learn something about how the human mind uses different kinds of information to discover patterns. Keep this variation in difficulty in mind as you evaluate "+
+    "your performance on the task.</p>" +
+  	"<p>We really appreciate your participation and contribution to this research. If you have any questions, you can contact the researcher at jdeleeuw@vassar.edu.</p>"+
+    "<p><a href='https://prolific.ac/submissions/complete?cc=5LAGRK1O'>Click here to complete the experiment and return to Prolific.</a></p>",
+    choices: jsPsych.NO_KEYS
+  }
+  timeline.push(final_debrief);
+
+  jsPsych.init({
+	  display_element: 'jspsych-target',
+	  timeline: timeline,
+    on_finish: function() {
+      jsPsych.data.displayData();
+    },
+    default_iti: 0
+  });
+</script>
+
+</html>

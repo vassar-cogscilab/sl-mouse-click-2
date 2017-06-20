@@ -59,7 +59,7 @@
   // experiment parameters
   var break_after_each_square = 200;
   var break_before_block = 500;
-  var block_length = 4000; // milliseconds
+  var block_length = 90000; // milliseconds
   var n_blocks = 8;
   var condition = jsPsych.randomization.sample([1,2,3],1);
   var n_pairs;
@@ -102,6 +102,41 @@
     choices: ['b']
   }
   timeline.push(welcome_block);
+  
+  var instructions_general = {
+	  type: "text",
+	  text: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on each square when it changes. For instance, for the following grid:</p>" +
+	  jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1,1,1]], 80, [0,1], '#FF0000') +
+		  "<p>You would click on the red square.</p>" +
+		  "<p>The goal of the game is to click on as many squares as you can within the time limit.</p>" +
+		  "<p>Press spacebar to continue when you are ready.</p>",
+	  choices: ['spacebar']
+	  }
+  timeline.push(instructions_general);
+  
+  var instructions_practice = {
+	  type: "text",
+	  text: "<p><b>Practice:</b></p>" +
+	 "<p>Here's a quick practice round to get you used to the game. You will see four squares like these: </p>" +
+	  jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1,1,1]], 80) +
+	  "<p>Press spacebar to begin when you are ready.</p>",
+	  choices: ['spacebar']
+  }
+  timeline.push(instructions_practice);
+  
+  var practice_timeline = {
+  	timeline: [{
+        type: 'serial-reaction-time-mouse',
+        grid_square_size: 80,
+		target: jsPsych.timelineVariable('target'),
+        grid: [1,1,1,1],
+		target_color: jsPsych.randomization.shuffle(["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"]),
+  		timing_pre_target: break_after_each_square,
+      }],
+    randomize_order: true,
+	repetitions: 12,
+  }
+  //timeline.push(practice_timeline);
 
   // show timer
   var show_timer = {
