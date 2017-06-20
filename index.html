@@ -102,7 +102,7 @@
     choices: ['b']
   }
   timeline.push(welcome_block);
-  
+
   var instructions_general = {
 	  type: "text",
 	  text: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on each square when it changes. For instance, for the following grid:</p>" +
@@ -113,7 +113,7 @@
 	  choices: ['spacebar']
 	  }
   timeline.push(instructions_general);
-  
+
   var instructions_practice = {
 	  type: "text",
 	  text: "<p><b>Practice:</b></p>" +
@@ -123,7 +123,7 @@
 	  choices: ['spacebar']
   }
   timeline.push(instructions_practice);
-  
+
   var practice_timeline = {
   	timeline: [{
         type: 'serial-reaction-time-mouse',
@@ -168,15 +168,15 @@
     [1, 1]
   ];
   if(condition == 1){
-    n_pairs = 4
-    order_array = [0,1,2,3]
+    n_pairs = 4;
+    order_array = [0,1,2,3];
   } else if (condition == 2) {
-    n_pairs = 6
-    order_array = [0,1,2,3,4,5]
+    n_pairs = 6;
+    order_array = [0,1,2,3,4,5];
   }
   else if (condition == 3) {
-    n_pairs = 8
-    order_array = [0,1,2,3,4,5,6,7]
+    n_pairs = 8;
+    order_array = [0,1,2,3,4,5,6,7];
   }
   var deltas = jsPsych.randomization.sample(deltas, n_pairs);
   var order = jsPsych.randomization.shuffle(order_array);
