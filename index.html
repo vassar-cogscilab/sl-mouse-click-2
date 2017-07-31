@@ -60,8 +60,8 @@
   var break_after_each_square = 200;
   var break_before_block = 500;
   var block_length = 90000; // milliseconds
-  var n_blocks = 8;
-  var condition = jsPsych.randomization.sample([1,2,3],1);
+  var n_blocks = 1;
+  var condition = 1;//jsPsych.randomization.sample([1,2,3],1);
   var n_pairs;
   var order_array;
 
@@ -130,13 +130,19 @@
         grid_square_size: 80,
 		target: jsPsych.timelineVariable('target'),
         grid: [1,1,1,1],
-		target_color: jsPsych.randomization.shuffle(["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"]),
+		target_color: jsPsych.randomization.shuffle(["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"])[0],
   		timing_pre_target: break_after_each_square,
       }],
     randomize_order: true,
-	repetitions: 12,
+	repetitions: 3,
+  timeline_variables: [
+    {target: [0,0]},
+    {target: [0,1]},
+    {target: [0,2]},
+    {target: [0,3]}
+  ]
   }
-  //timeline.push(practice_timeline);
+  timeline.push(practice_timeline);
 
   // show timer
   var show_timer = {
@@ -178,6 +184,7 @@
     n_pairs = 8;
     order_array = [0,1,2,3,4,5,6,7];
   }
+
   var deltas = jsPsych.randomization.sample(deltas, n_pairs);
   var order = jsPsych.randomization.shuffle(order_array);
   var current_idx = 0;
@@ -247,14 +254,12 @@
           grid_square_size: square_size,
           on_finish: function(data){
             data.pair = order[current_idx];
-            if((deltas[delta.pair][0] == 0 || deltas[delta.pair][1] == 0) && data_predictable == 'predictable'){
-              data.cardinal=true
-            } else if (data_predictable == 'unpredictable') {
-              data.cardinal= null
+            data.direction = JSON.stringify(deltas[data.pair]);
+            if(Math.abs(data.direction[0])!==Math.abs(data.direction[1]) && data_predictable == 'predictable'){
+            data.cardinal = true;
+            } else {
+            data.cardinal = false;
             }
-            else{
-              data.cardinal= false}
-            data.direction = JSON.stringify( deltas[delta.pair]);
             data.target_type = data_predictable;
             count_correct++;
             document.querySelector('#srt-correct-count').innerHTML = count_correct;
@@ -289,22 +294,22 @@
         var msg = "<p>You clicked on <b>"+count+" blocks</b> that round.</p>";
         if(which_block === 0){
           msg += "<p>That's a good start. See if you can get more next round.</p>";
-          msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>"
+          msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>";
           high_score = count;
-          msg += "<p>Take a break if you need to, and press <b>spacebar</b> to continue when you are ready.</p>"
+          msg += "<p>Take a break if you need to, and press <b>spacebar</b> to continue when you are ready.</p>";
         } else if(which_block !== (n_blocks - 1)) {
           if(count >= high_score){
             msg += "<p>That's your best score yet!</p>";
             if((n_blocks - 1 - which_block) == 1){
-              msg += "<p>The next round will be the final round in the experiment.</p>"
+              msg += "<p>The next round will be the final round in the experiment.</p>";
             } else {
-              msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>"
+              msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>";
             }
             high_score = count;
           } else {
             msg += "<p>That's <b>"+(high_score-count)+ "</b> away from your best round.</p>";
           }
-          msg += "<p>Take a break if you need to, and press <b>spacebar</b> to continue when you are ready.</p>"
+          msg += "<p>Take a break if you need to, and press <b>spacebar</b> to continue when you are ready.</p>";
         } else {
           if(count >= high_score){
             msg += "<p>That's your best score yet!</p>";
@@ -313,7 +318,7 @@
             msg += "<p>That's <b>"+(high_score-count)+ "</b> away from your best round.</p>";
           }
           msg += "<p>Nice job, that was the last round!</p>";
-          msg += "<p>Press <b>spacebar</b> to continue.</p>"
+          msg += "<p>Press <b>spacebar</b> to continue.</p>";
         }
         return msg;
       },
@@ -321,6 +326,36 @@
     }
     timeline.push(feedback);
   }
+  // debrief
+  var questionnare_patterns = {
+    type:'survey-text',
+    preamble: "<p>Congradulations! You have completed the experiment! Thank you for your participation!</p>"+
+    "In this study, we presented a sequence of color on a two-dimensional grid. There were patterns in the order of the sequence presented on the grid, we are investigating the way humans learn patterns.</p>",
+    questions: ["<p>Did you notice any patterns in the experiment?</p>"],
+    rows: [5],
+    columns: [60]
+  }
+  timeline.push(questionnare_patterns)
+  var test_patterns_text = {
+    type: 'text',
+    text: "<p>You may have noticed that colors of the squares in the sequence were paired—there were always two of a color in a row. So if you see a red square the next square will also be red.</p>"+
+    "<p>The next few questions do not have a time limit. We will show you a grid with the center square highlighted a color, in the grid below the position of the highlighted square is filled black.</p>+"
+    jsPsych.plugins['serial-reaction-time-mouse'].stimulus(locations,square_size) +
+    "<p>You will be asked to click where the next highlighted square will appear.</p>"+
+    "<p>Press the spacebar to continue.",
+    choices: ['spacebar']
+  }
+  timeline.push(test_patterns_text)
+
+  var test_patterns ={
+
+  }
+  var debrief = {
+
+  }
+
+
+  //questionnare
 
   jsPsych.init({
     display_element: 'jspsych-target',
