@@ -4,8 +4,8 @@
 <head>
   <script src="jsPsych/jspsych.js"></script>
   <script src="jsPsych/plugins/jspsych-serial-reaction-time-mouse.js"></script>
-  <script src="jsPsych/plugins/jspsych-text.js"></script>
-  <script src="jsPsych/plugins/jspsych-button-response.js"></script>
+  <script src="jsPsych/plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="jsPsych/plugins/jspsych-html-button-response.js"></script>
   <script src="jsPsych/plugins/jspsych-survey-text.js"></script>
   <script src="jsPsych/plugins/jspsych-call-function.js"></script>
   <script src="js/serverComm.js"></script>
@@ -66,8 +66,8 @@
   var order_array;
 
   // experiment grid
-  var grid_rows = 8;
-  var grid_cols = 8;
+  var grid_rows = 6;
+  var grid_cols = 6;
   var square_size = 50;
 
   var grid = [];
@@ -86,61 +86,66 @@
   // create experiment timeline
   var timeline = [];
 
-  // welcome message
+  // consent, welcome
   var consent_form = {
-    type: 'button-response',
+    type: 'html-button-response',
     stimulus: "<p>This is a research project conducted at Vassar College. In this experiment, you will play a simple computer game in which you try to quickly click symbols that appear on your screen. Our experiment investigates how different factors related to this game change how quickly people play. The experiment will take approximately 15 minutes to complete. You will receive a payment of £2.00 (about $2.50) upon completion of the experiment. The data we collect during the experiment are not linked to potentially identifying information, including your account information on Prolific. These data will solely be used for research purposes. You are free to stop the experiment by closing your browser window at any time. If you have any questions, you can contact Dr. Joshua de Leeuw at jdeleeuw@vassar.edu.</p>" +
       "<p>By clicking “I agree”, you affirm that you are at least 18 years of age, which is the minimum age to participate in this study, and that you understand the nature of your participation in this research. If you do not wish to participate, please close this window.</p",
-    choices: ['I agree.'],
-    is_html: true
+    choices: ['I agree.']
   }
+
   timeline.push(consent_form);
 
   var welcome_block = {
-    type: "text",
-    text: "Hi there! Welcome to the experiment. Press B to begin.",
+    type: "html-keyboard-response",
+    stimulus: "Hi there! Welcome to the experiment. Press B to begin.",
     choices: ['b']
   }
+
   timeline.push(welcome_block);
 
+  // instructions
+
   var instructions_general = {
-	  type: "text",
-	  text: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on each square when it changes. For instance, for the following grid:</p>" +
-	  jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1,1,1]], 80, [0,1], '#FF0000') +
+	  type: "html-keyboard-response",
+	  stimulus: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on each square when it changes. For instance, for the following grid:</p>" +
+      jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1],[1,1]], 80, [0,1], '#FF0000') +
 		  "<p>You would click on the red square.</p>" +
 		  "<p>The goal of the game is to click on as many squares as you can within the time limit.</p>" +
 		  "<p>Press spacebar to continue when you are ready.</p>",
 	  choices: ['spacebar']
-	  }
+  }
   timeline.push(instructions_general);
 
   var instructions_practice = {
-	  type: "text",
-	  text: "<p><b>Practice:</b></p>" +
-	 "<p>Here's a quick practice round to get you used to the game. You will see four squares like these: </p>" +
-	  jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1,1,1]], 80) +
-	  "<p>Press spacebar to begin when you are ready.</p>",
+	  type: "html-keyboard-response",
+	  stimulus: "<p><b>Practice:</b></p>" +
+  	  "<p>Here's a quick practice round to get you used to the game. You will see four squares like these: </p>" +
+  	  jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1],[1,1]], 80) +
+  	  "<p>Press spacebar to begin when you are ready.</p>",
 	  choices: ['spacebar']
   }
   timeline.push(instructions_practice);
 
   var practice_timeline = {
-  	timeline: [{
+  	timeline: [
+      {
         type: 'serial-reaction-time-mouse',
         grid_square_size: 80,
-		target: jsPsych.timelineVariable('target'),
-        grid: [1,1,1,1],
-		target_color: jsPsych.randomization.shuffle(["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"])[0],
-  		timing_pre_target: break_after_each_square,
-      }],
+        target: jsPsych.timelineVariable('target'),
+        grid: [[1,1],[1,1]],
+        target_color: function(){ return jsPsych.randomization.shuffle(["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"])[0]; },
+        timing_pre_target: break_after_each_square,
+      }
+    ],
     randomize_order: true,
-	repetitions: 3,
-  timeline_variables: [
-    {target: [0,0]},
-    {target: [0,1]},
-    {target: [0,2]},
-    {target: [0,3]}
-  ]
+    repetitions: 3,
+    timeline_variables: [
+      {target: [0,0]},
+      {target: [0,1]},
+      {target: [1,0]},
+      {target: [1,1]}
+    ]
   }
   timeline.push(practice_timeline);
 
@@ -185,15 +190,15 @@
     order_array = [0,1,2,3,4,5,6,7];
   }
 
-  var deltas = jsPsych.randomization.sample(deltas, n_pairs);
+  var deltas = jsPsych.randomization.sampleWithoutReplacement(deltas, n_pairs);
   var order = jsPsych.randomization.shuffle(order_array);
   var current_idx = 0;
 
   function getNextPredictor() {
-    var predictor = jsPsych.randomization.sample(locations, 1)[0];
+    var predictor = jsPsych.randomization.sampleWithoutReplacement(locations, 1)[0];
     if (last_target !== null) {
       while (predictor[0] == last_target[0] && predictor[1] == last_target[1]) {
-        predictor = jsPsych.randomization.sample(locations, 1)[0];
+        predictor = jsPsych.randomization.sampleWithoutReplacement(locations, 1)[0];
       }
     }
     last_predictor = predictor;
@@ -237,42 +242,40 @@
     var test = {
       data: {block: i},
       timeline: [{
-          type: 'serial-reaction-time-mouse',
-          grid: grid,
-          target: function(){
-            var next;
-
-            if(data_predictable == 'unpredictable'){
-              next = getNextPredictor();
-            } else {
-              next = getNextTarget();
-            }
-
-            return next;
-          },
-          target_color: getColor,
-          grid_square_size: square_size,
-          on_finish: function(data){
-            data.pair = order[current_idx];
-            data.direction = JSON.stringify(deltas[data.pair]);
-            if(Math.abs(data.direction[0])!==Math.abs(data.direction[1]) && data_predictable == 'predictable'){
-            data.cardinal = true;
-            } else {
-            data.cardinal = false;
-            }
-            data.target_type = data_predictable;
-            count_correct++;
-            document.querySelector('#srt-correct-count').innerHTML = count_correct;
-            if(data_predictable == 'predictable'){
-              current_idx++;
-              if (current_idx >= order.length) {
-                order = jsPsych.randomization.shuffle(order);
-                current_idx = 0;
-              }
-            }
-            data_predictable = (data_predictable == 'predictable') ? 'unpredictable' : 'predictable';
+        type: 'serial-reaction-time-mouse',
+        grid: grid,
+        target: function(){
+          var next;
+          if(data_predictable == 'unpredictable'){
+            next = getNextPredictor();
+          } else {
+            next = getNextTarget();
           }
-        }],
+          return next;
+        },
+        target_color: getColor,
+        grid_square_size: square_size,
+        on_finish: function(data){
+          data.pair = order[current_idx];
+          data.direction = JSON.stringify(deltas[data.pair]);
+          if(Math.abs(data.direction[0])!==Math.abs(data.direction[1]) && data_predictable == 'predictable'){
+            data.cardinal = true;
+          } else {
+            data.cardinal = false;
+          }
+          data.target_type = data_predictable;
+          count_correct++;
+          document.querySelector('#srt-correct-count').innerHTML = count_correct;
+          if(data_predictable == 'predictable'){
+            current_idx++;
+            if (current_idx >= order.length) {
+              order = jsPsych.randomization.shuffle(order);
+              current_idx = 0;
+            }
+          }
+          data_predictable = (data_predictable == 'predictable') ? 'unpredictable' : 'predictable';
+        }
+      }],
       loop_function: function() {
         if (Date.now() - block_start_time < block_length) {
           return true;
@@ -284,9 +287,9 @@
     timeline.push(test);
 
     var feedback = {
-      type: 'text',
+      type: 'html-keyboard-response',
       choices: ['spacebar'],
-      text: function(){
+      stimulus: function(){
         clearInterval(timer_ticks);
         var which_block = jsPsych.data.get().last(1).values()[0].block;
         var data = jsPsych.data.get().filter({block: which_block});
@@ -326,36 +329,31 @@
     }
     timeline.push(feedback);
   }
-  // debrief
-  var questionnare_patterns = {
-    type:'survey-text',
-    preamble: "<p>Congradulations! You have completed the experiment! Thank you for your participation!</p>"+
-    "In this study, we presented a sequence of color on a two-dimensional grid. There were patterns in the order of the sequence presented on the grid, we are investigating the way humans learn patterns.</p>",
-    questions: ["<p>Did you notice any patterns in the experiment?</p>"],
-    rows: [5],
-    columns: [60]
+
+  // explicit knowledge check
+  var ek_instructions = {
+    type: 'html-keyboard-response',
+    stimulus: '<p>This final part of the experiment involves just a few questions.</p>'+
+      '<p>During the previous rounds, you may have noticed that two squares in a row always appeared in the same color. You may have also noticed that colors provided information about where the next square to click on would appear. '+
+      'We are interested in whether you noticed and remember these patterns.</p>'+
+      '<p>On the next several screens, you will see a grid and single colored square like you saw in the previous rounds. This time, please click '+
+      'on the square where you think the next square of the same color would appear, assuming that the square being displayed is the first in the sequence of two.</p>'+
+      '<p>Press B to begin.</p>',
+    choices: ['b']
   }
-  timeline.push(questionnare_patterns)
+  timeline.push(ek_instructions);
+
+  // debrief
   var test_patterns_text = {
-    type: 'text',
-    text: "<p>You may have noticed that colors of the squares in the sequence were paired—there were always two of a color in a row. So if you see a red square the next square will also be red.</p>"+
-    "<p>The next few questions do not have a time limit. We will show you a grid with the center square highlighted a color, in the grid below the position of the highlighted square is filled black.</p>+"
+    type: 'html-keyboard-response',
+    stimulus: "<p>You may have noticed that colors of the squares in the sequence were paired—there were always two of a color in a row. So if you see a red square the next square will also be red.</p>"+
+    "<p>The next few questions do not have a time limit. We will show you a grid with the center square highlighted a color, in the grid below the position of the highlighted square is filled black.</p>"+
     jsPsych.plugins['serial-reaction-time-mouse'].stimulus(locations,square_size) +
     "<p>You will be asked to click where the next highlighted square will appear.</p>"+
     "<p>Press the spacebar to continue.",
     choices: ['spacebar']
   }
-  timeline.push(test_patterns_text)
-
-  var test_patterns ={
-
-  }
-  var debrief = {
-
-  }
-
-
-  //questionnare
+  timeline.push(test_patterns_text);
 
   jsPsych.init({
     display_element: 'jspsych-target',

@@ -17,39 +17,41 @@ jsPsych.plugins['survey-likert'] = (function() {
     description: '',
     parameters: {
       questions: {
-        type: [jsPsych.plugins.parameterType.STRING],
+        type: jsPsych.plugins.parameterType.COMPLEX,
         array: true,
-        default: undefined,
-        no_function: false,
-        description: ''
+        nested: {
+          prompt: {type: jsPsych.plugins.parameterType.STRING,
+                     pretty_name: 'Prompt',
+                     default: undefined,
+                     description: 'Questions that are associated with the slider.'},
+          labels: {type: jsPsych.plugins.parameterType.STRING,
+                   array: true,
+                   pretty_name: 'Labels',
+                   default: undefined,
+                   description: 'Labels to display for individual question.'},
+          required: {type: jsPsych.plugins.parameterType.BOOL,
+                     pretty_name: 'Required',
+                     default: false,
+                     description: 'Makes answering questions required.'}
+        }
       },
-      labels: {
-        type: [jsPsych.plugins.parameterType.STRING],
-        array: true,
-        default: undefined,
-        no_function: false,
-        description: ''
+      preamble: {
+        type: jsPsych.plugins.parameterType.STRING,
+        pretty_name: 'Preamble',
+        default: '',
+        description: 'String to display at top of the page.'
       },
       button_label: {
-        type: [jsPsych.plugins.parameterType.STRING],
-        default: 'Submit Answers',
-        no_function: false,
-        description: ''
+        type: jsPsych.plugins.parameterType.STRING,
+        pretty_name: 'Button label',
+        default: 'Next',
+        description: 'Label of the button.'
       }
     }
   }
 
   plugin.trial = function(display_element, trial) {
 
-    // default parameters for the trial
-    trial.preamble = typeof trial.preamble === 'undefined' ? "" : trial.preamble;
-    trial.required = typeof trial.required === 'undefined' ? false : trial.required;
-    trial.button_label = typeof trial.button_label === 'undefined' ? 'Submit Answers' : trial.button_label;
-
-    // if any trial variables are functions
-    // this evaluates the function and replaces
-    // it with the output of the function
-    trial = jsPsych.pluginAPI.evaluateFunctionParameters(trial);
 
     var html = "";
     // inject CSS for trial
@@ -71,16 +73,16 @@ jsPsych.plugins['survey-likert'] = (function() {
     // add likert scale questions
     for (var i = 0; i < trial.questions.length; i++) {
       // add question
-      html += '<label class="jspsych-survey-likert-statement">' + trial.questions[i] + '</label>';
+      html += '<label class="jspsych-survey-likert-statement">' + trial.questions[i].prompt + '</label>';
       // add options
-      var width = 100 / trial.labels[i].length;
+      var width = 100 / trial.questions[i].labels.length;
       var options_string = '<ul class="jspsych-survey-likert-opts" data-radio-group="Q' + i + '">';
-      for (var j = 0; j < trial.labels[i].length; j++) {
+      for (var j = 0; j < trial.questions[i].labels.length; j++) {
         options_string += '<li style="width:' + width + '%"><input type="radio" name="Q' + i + '" value="' + j + '"';
-        if(trial.required){
+        if(trial.questions[i].required){
           options_string += ' required';
         }
-        options_string += '><label class="jspsych-survey-likert-opt-label">' + trial.labels[i][j] + '</label></li>';
+        options_string += '><label class="jspsych-survey-likert-opt-label">' + trial.questions[i].labels[j] + '</label></li>';
       }
       options_string += '</ul>';
       html += options_string;
