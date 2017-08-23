@@ -108,9 +108,9 @@
 
   var instructions_general = {
 	  type: "html-keyboard-response",
-	  stimulus: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on each square when it changes. For instance, for the following grid:</p>" +
+	  stimulus: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on each square when it changes.</p>"+
+      "<p>For instance, for the grid below, you would click the red square.</p>" +
       jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1],[1,1]], 80, [0,1], '#FF0000') +
-		  "<p>You would click on the red square.</p>" +
 		  "<p>The goal of the game is to click on as many squares as you can within the time limit.</p>" +
 		  "<p>Press spacebar to continue when you are ready.</p>",
 	  choices: ['spacebar']
