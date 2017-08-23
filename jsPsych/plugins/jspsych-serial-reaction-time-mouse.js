@@ -71,7 +71,7 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
         pretty_name: 'Allow nontarget response',
         default: false,
         description: 'If true, then user can make nontarget response.'
-      }, 
+      },
       prompt: {
         type: jsPsych.plugins.parameterType.STRING,
         pretty_name: 'Prompt',
@@ -105,7 +105,7 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
 
 		//show prompt if there is one
     if (trial.prompt !== "") {
-      display_element.innerHTML += trial.prompt;
+      display_element.insertAdjacentHTML('beforeend', trial.prompt);
     }
 
 		function showTarget(){

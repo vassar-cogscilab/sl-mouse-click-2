@@ -102,7 +102,7 @@
     choices: ['b']
   }
 
-  timeline.push(welcome_block);
+  //timeline.push(welcome_block);
 
   // instructions
 
@@ -115,7 +115,7 @@
 		  "<p>Press spacebar to continue when you are ready.</p>",
 	  choices: ['spacebar']
   }
-  timeline.push(instructions_general);
+  //timeline.push(instructions_general);
 
   var instructions_practice = {
 	  type: "html-keyboard-response",
@@ -125,7 +125,7 @@
   	  "<p>Press spacebar to begin when you are ready.</p>",
 	  choices: ['spacebar']
   }
-  timeline.push(instructions_practice);
+  //timeline.push(instructions_practice);
 
   var practice_timeline = {
   	timeline: [
@@ -135,7 +135,8 @@
         target: jsPsych.timelineVariable('target'),
         grid: [[1,1],[1,1]],
         target_color: function(){ return jsPsych.randomization.shuffle(["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"])[0]; },
-        timing_pre_target: break_after_each_square,
+        pre_target_duration: break_after_each_square,
+        data: {phase: 'practice'}
       }
     ],
     randomize_order: true,
@@ -147,7 +148,14 @@
       {target: [1,1]}
     ]
   }
-  timeline.push(practice_timeline);
+  //timeline.push(practice_timeline);
+
+  var test_instructions = {
+    type: "html-keyboard-response",
+	  stimulus: "<p>Instructions for test phase go here...</p>",
+	  choices: ['spacebar']
+  }
+  timeline.push(test_instructions);
 
   // show timer
   var show_timer = {
@@ -255,7 +263,9 @@
         },
         target_color: getColor,
         grid_square_size: square_size,
+        pre_target_duration: break_after_each_square,
         on_finish: function(data){
+          data.phase = 'rt-test';
           data.pair = order[current_idx];
           data.direction = JSON.stringify(deltas[data.pair]);
           if(Math.abs(data.direction[0])!==Math.abs(data.direction[1]) && data_predictable == 'predictable'){
@@ -330,6 +340,14 @@
     timeline.push(feedback);
   }
 
+  var hide_timer = {
+    type: 'call-function',
+    func: function() {
+      document.querySelector('#srt-score').style.display = 'none';
+    }
+  }
+  timeline.push(hide_timer);
+
   // explicit knowledge check
   var ek_instructions = {
     type: 'html-keyboard-response',
@@ -343,17 +361,64 @@
   }
   timeline.push(ek_instructions);
 
-  // debrief
-  var test_patterns_text = {
-    type: 'html-keyboard-response',
-    stimulus: "<p>You may have noticed that colors of the squares in the sequence were paired—there were always two of a color in a row. So if you see a red square the next square will also be red.</p>"+
-    "<p>The next few questions do not have a time limit. We will show you a grid with the center square highlighted a color, in the grid below the position of the highlighted square is filled black.</p>"+
-    jsPsych.plugins['serial-reaction-time-mouse'].stimulus(locations,square_size) +
-    "<p>You will be asked to click where the next highlighted square will appear.</p>"+
-    "<p>Press the spacebar to continue.",
-    choices: ['spacebar']
+  var ek_variables = [];
+  for(var i=0; i<n_pairs; i++){
+    l1 = jsPsych.randomization.sampleWithoutReplacement(locations, 1)[0];
+    l2 = jsPsych.randomization.sampleWithoutReplacement(locations, 1)[0];
+    while(JSON.stringify(l1) == JSON.stringify(l2)){
+      l2 = jsPsych.randomization.sampleWithoutReplacement(locations, 1)[0];
+    }
+    l3 = [l2[0]+deltas[i][0], l2[1] + deltas[i][1]];
+    ek_variables.push({
+      location_1: l1,
+      location_2: l2,
+      location_3: l3,
+      target_color: colors[i],
+      other_color: (i < n_pairs - 2) ? colors[i+1] : colors[0],
+      data: {phase: 'ek-test-taget', pair: i}
+    });
   }
-  timeline.push(test_patterns_text);
+
+  var sample_ek = {
+    timeline: [
+      {
+        type: 'serial-reaction-time-mouse',
+        grid: grid,
+        allow_nontarget_responses: false,
+        grid_square_size: square_size,
+        prompt: '<p>&nbsp;</p>',
+        target: jsPsych.timelineVariable('location_1'),
+        target_color: jsPsych.timelineVariable('other_color'),
+        data: {phase: 'ek-test-pretarget'}
+      },
+      {
+        type: 'serial-reaction-time-mouse',
+        grid: grid,
+        allow_nontarget_responses: false,
+        grid_square_size: square_size,
+        prompt: '<p>&nbsp;</p>',
+        target: jsPsych.timelineVariable('location_2'),
+        target_color: jsPsych.timelineVariable('target_color'),
+        data: {phase: 'ek-test-pretarget'}
+      },
+      {
+        type: 'serial-reaction-time-mouse',
+        grid: grid,
+        allow_nontarget_responses: true,
+        grid_square_size: square_size,
+        prompt: '<p>Click where you believe the next square would most likely appear.</p>',
+        target: jsPsych.timelineVariable('location_3'),
+        target_color: '#fff',
+        post_trial_gap: 1000,
+        data: jsPsych.timelineVariable('data')
+      }
+    ],
+    timeline_variables: ek_variables,
+    randomize_order: true
+  }
+  timeline.push(sample_ek);
+
+  // debrief
 
   jsPsych.init({
     display_element: 'jspsych-target',
