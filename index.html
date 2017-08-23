@@ -419,6 +419,13 @@
   timeline.push(sample_ek);
 
   // debrief
+  var debrief = {
+    type: "html-keyboard-response",
+	  stimulus: "<p>Debrief will go here...</p>",
+	  choices: ['spacebar']
+  }
+  timeline.push(debrief);
+
   jsPsych.init({
     display_element: 'jspsych-target',
     timeline: timeline
