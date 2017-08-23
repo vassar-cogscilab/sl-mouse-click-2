@@ -101,8 +101,7 @@
     stimulus: "Hi there! Welcome to the experiment. Press B to begin.",
     choices: ['b']
   }
-
-  //timeline.push(welcome_block);
+  timeline.push(welcome_block);
 
   // instructions
 
@@ -115,7 +114,7 @@
 		  "<p>Press spacebar to continue when you are ready.</p>",
 	  choices: ['spacebar']
   }
-  //timeline.push(instructions_general);
+  timeline.push(instructions_general);
 
   var instructions_practice = {
 	  type: "html-keyboard-response",
@@ -125,7 +124,7 @@
   	  "<p>Press spacebar to begin when you are ready.</p>",
 	  choices: ['spacebar']
   }
-  //timeline.push(instructions_practice);
+  timeline.push(instructions_practice);
 
   var practice_timeline = {
   	timeline: [
@@ -148,7 +147,7 @@
       {target: [1,1]}
     ]
   }
-  //timeline.push(practice_timeline);
+  timeline.push(practice_timeline);
 
   var test_instructions = {
     type: "html-keyboard-response",
@@ -419,7 +418,6 @@
   timeline.push(sample_ek);
 
   // debrief
-
   jsPsych.init({
     display_element: 'jspsych-target',
     timeline: timeline
