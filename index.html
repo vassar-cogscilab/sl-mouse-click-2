@@ -20,6 +20,10 @@
       padding: 0;
     }
 
+    .jspsych-content {
+      max-width: 75%;
+    }
+
     #jspsych-target {
       width: 100%;
       height: 100%;
@@ -57,13 +61,19 @@
   <div id="jspsych-target"></div>
 </body>
 <script>
+
+  // FIX THE responsivness of the click.
+  // Ask if they used mouse or trackpad.
+
   // experiment parameters
-  var break_after_each_square = 200;
+  var break_after_each_square = 300;
   var break_before_block = 500;
-  var block_length = 10000; // milliseconds
-  var n_blocks = 2;
+  var block_length = 90000; // milliseconds
+  var n_blocks = 10;
   var ek_reps = 2; // reps per pair in explicit knowledge check
-  var condition = 1;//jsPsych.randomization.sample([1,2,3],1);
+
+  // placeholders
+  var condition;
   var n_pairs;
   var order_array;
 
@@ -112,30 +122,31 @@
     // consent, welcome
     var consent_form = {
       type: 'html-button-response',
-      stimulus: "<p>This is a research project conducted at Vassar College. In this experiment, you will play a simple computer game in which you try to quickly click symbols that appear on your screen. Our experiment investigates how different factors related to this game change how quickly people play. The experiment will take approximately 15 minutes to complete. You will receive a payment of £2.00 (about $2.50) upon completion of the experiment. The data we collect during the experiment are not linked to potentially identifying information, including your account information on Prolific. These data will solely be used for research purposes. You are free to stop the experiment by closing your browser window at any time. If you have any questions, you can contact Dr. Joshua de Leeuw at jdeleeuw@vassar.edu.</p>" +
+      stimulus: "<p>This is a research project conducted at Vassar College. In this experiment, you will play a simple computer game in which you try to quickly click symbols that appear on your screen. Our experiment investigates how different factors related to this game change how quickly people play. The experiment will take approximately 20 minutes to complete. You will receive a payment of £2.75 (about $3.50) upon completion of the experiment. The data we collect during the experiment are not linked to potentially identifying information, including your account information on Prolific. These data will solely be used for research purposes. You are free to stop the experiment by closing your browser window at any time. If you have any questions, you can contact Dr. Joshua de Leeuw at jdeleeuw@vassar.edu.</p>" +
         "<p>By clicking “I agree”, you affirm that you are at least 18 years of age, which is the minimum age to participate in this study, and that you understand the nature of your participation in this research. If you do not wish to participate, please close this window.</p",
-      choices: ['I agree.']
+      choices: ['I agree']
     }
 
     timeline.push(consent_form);
 
     var welcome_block = {
-      type: "html-keyboard-response",
-      stimulus: "Hi there! Welcome to the experiment. Press B to begin.",
-      choices: ['b']
+      type: "html-button-response",
+      stimulus: "<p>Hi there! Welcome to the experiment.</p>",
+      choices: ['Continue']
     }
     timeline.push(welcome_block);
+
+
 
     // instructions
 
     var instructions_general = {
-  	  type: "html-keyboard-response",
+  	  type: "html-button-response",
   	  stimulus: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on the colored square as quickly as possible.</p>"+
         "<p>For instance, for the grid below, you would click the red square.</p>" +
         jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1],[1,1]], 80, [0,1], '#FF0000') +
-  		  "<p>The goal of the game is to click on as many squares as you can within a certain amount of time.</p>" +
-  		  "<p>Press C to continue.</p>",
-  	  choices: ['C']
+  		  "<p>The goal of the game is to click on as many squares as you can within a series of 90 second rounds.</p>",
+  	  choices: ['Continue']
     }
     timeline.push(instructions_general);
 
@@ -152,8 +163,8 @@
         }
       ],
       randomize_order: true,
-      repetitions: 3,
-      prompt: '<p>This is a practice round. Go ahead and click on the colored square above. The experiment will continue after 12 colored squares have been clicked.</p>',
+      repetitions: 2,
+      prompt: '<p>This is a practice round. Go ahead and click on the colored square above. The experiment will continue after you click 8 colored squares.</p>',
       timeline_variables: [
         {target: [0,0]},
         {target: [0,1]},
@@ -162,6 +173,14 @@
       ]
     }
     timeline.push(practice_timeline);
+
+    var input_device = {
+      type: "html-button-response",
+      stimulus: "<p>Are you using a mouse, trackpad, or touchscreen to click the squares?</p>",
+      choices: ['Mouse', 'Trackpad', 'Touchscreen', 'Other', 'Not Sure'],
+      data: {phase: 'input-device'}
+    }
+    timeline.push(input_device);
 
     // show timer
     var show_timer = {
@@ -173,14 +192,13 @@
     timeline.push(show_timer);
 
     var test_instructions = {
-      type: "html-keyboard-response",
+      type: "html-button-response",
   	  stimulus: "<p>Great! Now you are ready to start the experiment.</p><p>The next part is just like the practice, with two small differences.</p>"+
         "<p>1) The timer above will fill up while you are clicking. Your goal is to get as many squares as possible before the time has elapsed.</p>"+
         "<p>2) The grid will be larger, with 36 different possible squares to select.</p>"+
-        "<p>There will be a total of "+n_blocks+" rounds in the experiment. We'll keep track of your high score and update you after each round.</p>"+
-        "<p>After the "+n_blocks+" rounds, there will be another short task to complete.</p>"+
-        "<p>When you are ready to begin, press B.</p>",
-  	  choices: ['b']
+        "<p>There will be a total of "+n_blocks+" rounds in the experiment. Each round lasts 90 seconds. We'll keep track of your high score and update you after each round.</p>"+
+        "<p>After the "+n_blocks+" rounds, there will be another (shorter) task to complete.</p>",
+  	  choices: ['I am ready to start']
     }
     timeline.push(test_instructions);
 
@@ -315,8 +333,8 @@
       timeline.push(test);
 
       var feedback = {
-        type: 'html-keyboard-response',
-        choices: ['c'],
+        type: 'html-button-response',
+        choices: ['Continue'],
         stimulus: function(){
           clearInterval(timer_ticks);
           var which_block = jsPsych.data.get().last(1).values()[0].block;
@@ -327,20 +345,20 @@
             msg += "<p>That's a good start. See if you can get more next round.</p>";
             msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>";
             high_score = count;
-            msg += "<p>Take a break if you need to, and press <b>C</b> to continue when you are ready.</p>";
+            msg += "<p>Take a break if you need to, and press the button below to continue when you are ready.</p>";
           } else if(which_block !== (n_blocks - 1)) {
             if(count >= high_score){
               msg += "<p>That's your best score yet!</p>";
-              if((n_blocks - 1 - which_block) == 1){
-                msg += "<p>The next round will be the final round in the experiment.</p>";
-              } else {
-                msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>";
-              }
               high_score = count;
             } else {
               msg += "<p>That's <b>"+(high_score-count)+ "</b> away from your best round.</p>";
             }
-            msg += "<p>Take a break if you need to, and press <b>C</b> to continue when you are ready.</p>";
+            if((n_blocks - 1 - which_block) == 1){
+              msg += "<p>The next round will be the final round in the experiment.</p>";
+            } else {
+              msg += "<p>There are " + (n_blocks - 1 - which_block) + " rounds remaining in the experiment.</p>";
+            }
+            msg += "<p>Take a break if you need to, and press the button below to continue when you are ready.</p>";
           } else {
             if(count >= high_score){
               msg += "<p>That's your best score yet!</p>";
@@ -349,7 +367,6 @@
               msg += "<p>That's <b>"+(high_score-count)+ "</b> away from your best round.</p>";
             }
             msg += "<p>That was the last round! There's one short task left to complete.</p>";
-            msg += "<p>Press <b>C</b> to continue.</p>";
           }
           return msg;
         },
@@ -368,13 +385,12 @@
 
     // explicit knowledge check
     var ek_instructions = {
-      type: 'html-keyboard-response',
+      type: 'html-button-response',
       stimulus: '<p>This final part of the experiment involves a slightly different task using the same grid.</p>'+
         '<p>You will see colored squares and click on them in the same way that you did before. Occassionally, instead of showing you a colored square, you will be asked to predict where the next square would appear.</p>'+
         '<p>When this happens, a message will appear below the grid instructing you to click on the square that you think would be the next colored square.</p>'+
-        '<p>This part of the experiment is much shorter than the first part.</p>'+
-        '<p>Press B to begin.</p>',
-      choices: ['b']
+        '<p>This part of the experiment is much shorter than the first part.</p>',
+      choices: ['Continue']
     }
     timeline.push(ek_instructions);
 
@@ -416,6 +432,7 @@
           allow_nontarget_responses: false,
           grid_square_size: square_size,
           prompt: '<p>&nbsp;</p>',
+          pre_target_duration: break_after_each_square,
           target: jsPsych.timelineVariable('location_2'),
           target_color: jsPsych.timelineVariable('target_color'),
           data: {phase: 'ek-test-pretarget'}
@@ -441,7 +458,7 @@
     var save_data = {
       type: 'call-function',
       func: function(){
-        serverComm.save_data(jsPsych.data.get())
+        serverComm.save_data(jsPsych.data.get().values())
       }
     }
     timeline.push(save_data);
@@ -450,7 +467,7 @@
     var debrief = {
       type: "html-keyboard-response",
   	  stimulus: "<p>Thanks! That's the end of the experiment!</p>"+
-      "<p>You may have noticed that the colors of the squares could help you predict where the next square would appear."+
+      "<p>You may have noticed that the colors of the squares could help you predict where the next square would appear. "+
       "This experiment is helping us test theories about how people learn to recognize these kinds of patterns in the world.</p>"+
       "<p>We will measure how long it took you to click on different squares to get an idea of how quickly you were learning the different patterns.</p>"+
       "<p>Don't worry if you feel like you didn't learn the patterns. In experiments like this, most people don't notice the patterns. One thing that we are trying to "+
