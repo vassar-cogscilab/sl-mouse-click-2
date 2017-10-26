@@ -94,7 +94,6 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
     var stimulus = this.stimulus(trial.grid, trial.grid_square_size);
     display_element.innerHTML = stimulus;
 
-
 		if(trial.pre_target_duration <= 0){
 			showTarget();
 		} else {
