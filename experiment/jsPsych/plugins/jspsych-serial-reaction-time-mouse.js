@@ -23,6 +23,11 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
         default: undefined,
         description: 'The location of the target. The array should be the [row, column] of the target.'
       },
+      trail: {
+        type: jsPsych.plugins.parameterType.INT,
+        array: true,
+        default: null
+      },
       grid: {
         type: jsPsych.plugins.parameterType.BOOL,
         pretty_name: 'Grid',
@@ -93,6 +98,13 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
     // display stimulus
     var stimulus = this.stimulus(trial.grid, trial.grid_square_size);
     display_element.innerHTML = stimulus;
+
+    if(trial.trail !== null){
+      for(var i=0; i<trial.trail.length; i++){
+        display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.trail[i][0]+'-'+trial.trail[i][1]).style.backgroundColor = trial.target_color;
+        display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.trail[i][0]+'-'+trial.trail[i][1]).style.opacity = 0.5;
+      }
+    }
 
 		if(trial.pre_target_duration <= 0){
 			showTarget();

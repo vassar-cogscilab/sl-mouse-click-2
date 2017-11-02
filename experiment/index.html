@@ -297,6 +297,13 @@
             }
             return next;
           },
+          trail: function(){
+            if(data_predictable == 'unpredictable'){
+              return null;
+            } else {
+              return [last_predictor];
+            }
+          },
           target_color: getColor,
           grid_square_size: square_size,
           pre_target_duration: break_after_each_square,
