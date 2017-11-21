@@ -4,7 +4,7 @@
 <head>
   <title>Experiment</title>
   <script src="jsPsych/jspsych.js"></script>
-  <script src="jsPsych/plugins/jspsych-serial-reaction-time-mouse.js"></script>
+  <script src="jsPsych/plugins/jspsych-serial-reaction-time-keys-moving.js"></script>
   <script src="jsPsych/plugins/jspsych-html-keyboard-response.js"></script>
   <script src="jsPsych/plugins/jspsych-html-button-response.js"></script>
   <script src="jsPsych/plugins/jspsych-survey-text.js"></script>
@@ -78,8 +78,8 @@
   var order_array;
 
   // experiment grid
-  var grid_rows = 6;
-  var grid_cols = 6;
+  var grid_rows = 5;
+  var grid_cols = 5;
   var square_size = 50;
 
   var grid = [];
@@ -127,16 +127,14 @@
       choices: ['I agree']
     }
 
-    timeline.push(consent_form);
+    //timeline.push(consent_form);
 
     var welcome_block = {
       type: "html-button-response",
       stimulus: "<p>Hi there! Welcome to the experiment.</p>",
       choices: ['Continue']
     }
-    timeline.push(welcome_block);
-
-
+    //timeline.push(welcome_block);
 
     // instructions
 
@@ -144,16 +142,16 @@
   	  type: "html-button-response",
   	  stimulus: "<p>This experiment involves playing a simple game. You'll see a grid of squares that change into various colors, and your job is to click on the colored square as quickly as possible.</p>"+
         "<p>For instance, for the grid below, you would click the red square.</p>" +
-        jsPsych.plugins['serial-reaction-time-mouse'].stimulus([[1,1],[1,1]], 80, [0,1], '#FF0000') +
+        jsPsych.plugins['serial-reaction-time-keys-moving'].stimulus([[1,1],[1,1]], 80, [0,1], '#FF0000') +
   		  "<p>The goal of the game is to click on as many squares as you can within a series of 90 second rounds.</p>",
   	  choices: ['Continue']
     }
-    timeline.push(instructions_general);
+    //timeline.push(instructions_general);
 
     var practice_timeline = {
     	timeline: [
         {
-          type: 'serial-reaction-time-mouse',
+          type: 'serial-reaction-time-keys-moving',
           grid_square_size: 80,
           target: jsPsych.timelineVariable('target'),
           grid: [[1,1],[1,1]],
@@ -172,7 +170,7 @@
         {target: [1,1]}
       ]
     }
-    timeline.push(practice_timeline);
+    //timeline.push(practice_timeline);
 
     var input_device = {
       type: "html-button-response",
@@ -180,7 +178,7 @@
       choices: ['Mouse', 'Trackpad', 'Touchscreen', 'Other', 'Not Sure'],
       data: {phase: 'input-device'}
     }
-    timeline.push(input_device);
+    //timeline.push(input_device);
 
     // show timer
     var show_timer = {
@@ -205,57 +203,37 @@
     // test blocks
     var block_start_time;
     var which_target;
-    var data_predictable;
+    var triple_position;
     var timer_ticks;
     var count_correct;
     var high_score = 0;
     var last_predictor = null;
     var last_target = null;
-    var colors = ["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280", "#848482", "#008856"];
-    var deltas = [
-      [-1, -1],
-      [-1, 0],
-      [-1, 1],
-      [0, -1],
-      [0, 1],
-      [1, -1],
-      [1, 0],
-      [1, 1]
-    ];
-    if(condition == 1){
-      n_pairs = 4;
-      order_array = [0,1,2,3];
-    } else if (condition == 2) {
-      n_pairs = 6;
-      order_array = [0,1,2,3,4,5];
-    }
-    else if (condition == 3) {
-      n_pairs = 8;
-      order_array = [0,1,2,3,4,5,6,7];
+    var colors = ["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280"];
+    var triples = [];
+    var first_key = jsPsych.randomization.sampleWithoutReplacement([-1,-1,0,0,1,1],6);
+    var second_key = jsPsych.randomization.sampleWithoutReplacement([-1,-1,0,0,1,1],6);
+    for(var i=0; i<first_key.length; i++){
+      triples.push([first_key[i], second_key[i]]);
     }
 
-    var deltas = jsPsych.randomization.sampleWithoutReplacement(deltas, n_pairs);
-    var order = jsPsych.randomization.shuffle(order_array);
+    var order = jsPsych.randomization.shuffle([0,1,2,3,4,5]);
     var current_idx = 0;
 
-    function getNextPredictor() {
-      var predictor = jsPsych.randomization.sampleWithoutReplacement(locations, 1)[0];
-      if (last_target !== null) {
-        while (predictor[0] == last_target[0] && predictor[1] == last_target[1]) {
-          predictor = jsPsych.randomization.sampleWithoutReplacement(locations, 1)[0];
-        }
+    function getNextLocation() {
+      var offset = 0;
+      if(triple_position==0){
+        offset = jsPsych.randomization.sampleWithoutReplacement([-1,0,1],1)[0];
+      } else if(triple_position==1){
+        offset = triples[order[current_idx]][0];
+      } else if(triple_position==2){
+        offset = triples[order[current_idx]][1];
       }
-      last_predictor = predictor;
-      return predictor;
+      return([grid_rows-1, Math.floor(grid_cols/2) + offset]);
     }
 
-    function getNextTarget() {
-      var target = last_predictor.slice();
-      var d = deltas[order[current_idx]];
-      target[0] = target[0] + d[0];
-      target[1] = target[1] + d[1];
-      last_target = target;
-      return target;
+    function getTrail(){
+      return [];
     }
 
     function getColor() {
@@ -271,7 +249,7 @@
           current_idx = 0;
           last_target = null;
           last_predictor = null;
-          data_predictable = 'unpredictable';
+          triple_position = 0;
           count_correct = 0;
           document.querySelector('#srt-correct-count').innerHTML = count_correct;
           block_start_time = Date.now();
@@ -286,24 +264,11 @@
       var test = {
         data: {block: i},
         timeline: [{
-          type: 'serial-reaction-time-mouse',
+          type: 'serial-reaction-time-keys-moving',
           grid: grid,
-          target: function(){
-            var next;
-            if(data_predictable == 'unpredictable'){
-              next = getNextPredictor();
-            } else {
-              next = getNextTarget();
-            }
-            return next;
-          },
-          trail: function(){
-            if(data_predictable == 'unpredictable'){
-              return null;
-            } else {
-              return [last_predictor];
-            }
-          },
+          correct_key: 'b',
+          target: getNextLocation,
+          trail: getTrail,
           target_color: getColor,
           grid_square_size: square_size,
           pre_target_duration: break_after_each_square,
@@ -316,7 +281,7 @@
             } else {
               data.cardinal = false;
             }
-            data.target_type = data_predictable;
+            data.target_type = triple_position;
             count_correct++;
             document.querySelector('#srt-correct-count').innerHTML = count_correct;
             if(data_predictable == 'predictable'){
@@ -326,7 +291,8 @@
                 current_idx = 0;
               }
             }
-            data_predictable = (data_predictable == 'predictable') ? 'unpredictable' : 'predictable';
+            triple_position++;
+            if(triple_position == 3) { triple_position = 0; }
           }
         }],
         loop_function: function() {
@@ -424,7 +390,7 @@
     var sample_ek = {
       timeline: [
         {
-          type: 'serial-reaction-time-mouse',
+          type: 'serial-reaction-time-keys-moving',
           grid: grid,
           allow_nontarget_responses: false,
           grid_square_size: square_size,
@@ -434,7 +400,7 @@
           data: {phase: 'ek-test-pretarget'}
         },
         {
-          type: 'serial-reaction-time-mouse',
+          type: 'serial-reaction-time-keys-moving',
           grid: grid,
           allow_nontarget_responses: false,
           grid_square_size: square_size,
@@ -445,7 +411,7 @@
           data: {phase: 'ek-test-pretarget'}
         },
         {
-          type: 'serial-reaction-time-mouse',
+          type: 'serial-reaction-time-keys-moving',
           grid: grid,
           allow_nontarget_responses: true,
           grid_square_size: square_size,

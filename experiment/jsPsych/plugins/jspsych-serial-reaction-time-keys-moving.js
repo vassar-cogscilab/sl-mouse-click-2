@@ -8,12 +8,12 @@
  *
  **/
 
-jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
+jsPsych.plugins["serial-reaction-time-keys-moving"] = (function() {
 
   var plugin = {};
 
   plugin.info = {
-    name: 'serial-reaction-time-mouse',
+    name: 'serial-reaction-time-keys-moving',
     description: '',
     parameters: {
       target: {
@@ -35,6 +35,11 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
         default: [[1,1,1,1]],
         description: 'This array represents the grid of boxes shown on the screen.'
       },
+      correct_key: {
+        type: jsPsych.plugins.parameterType.KEYCODE,
+        pretty_name: 'Correct Key',
+        default: undefined
+      },
       grid_square_size: {
         type: jsPsych.plugins.parameterType.INT,
         pretty_name: 'Grid square size',
@@ -46,12 +51,6 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
         pretty_name: 'Target color',
         default: "#999",
         description: 'The color of the target square.'
-      },
-      trail_color: {
-        type: jsPsych.plugins.parameterType.STRING,
-        pretty_name: 'Trail color',
-        default: "#999",
-        description: 'The color of the trail square(s).'
       },
       response_ends_trial: {
         type: jsPsych.plugins.parameterType.BOOL,
@@ -107,8 +106,8 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
 
     if(trial.trail !== null){
       for(var i=0; i<trial.trail.length; i++){
-        display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.trail[i][0]+'-'+trial.trail[i][1]).style.backgroundColor = trial.trail_color;
-        display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.trail[i][0]+'-'+trial.trail[i][1]).style.opacity = 0.8;
+        display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.trail[i][0]+'-'+trial.trail[i][1]).style.backgroundColor = trial.target_color;
+        display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.trail[i][0]+'-'+trial.trail[i][1]).style.opacity = 0.5;
       }
     }
 
@@ -126,27 +125,16 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
     }
 
 		function showTarget(){
-      var resp_targets;
-      if(!trial.allow_nontarget_responses){
-        resp_targets = [display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.target[0]+'-'+trial.target[1])]
-      } else {
-        resp_targets = display_element.querySelectorAll('.jspsych-serial-reaction-time-stimulus-cell');
-      }
-      for(var i=0; i<resp_targets.length; i++){
-        resp_targets[i].addEventListener('mousedown', function(e){
-          if(startTime == -1){
-            return;
-          } else {
-            var info = {}
-            info.row = e.currentTarget.getAttribute('data-row');
-            info.column = e.currentTarget.getAttribute('data-column');
-            info.rt = Date.now() - startTime;
-            after_response(info);
-          }
-        });
-      }
 
       startTime = Date.now();
+
+      jsPsych.pluginAPI.getKeyboardResponse({
+        callback_function: after_response,
+        valid_responses: [trial.correct_key],
+        rt_method: 'date',
+        persist: false,
+        allow_held_key: false
+      });
 
       if(trial.fade_duration == -1){
         display_element.querySelector('#jspsych-serial-reaction-time-stimulus-cell-'+trial.target[0]+'-'+trial.target[1]).style.backgroundColor = trial.target_color;
@@ -165,14 +153,13 @@ jsPsych.plugins["serial-reaction-time-mouse"] = (function() {
 
       // kill any remaining setTimeout handlers
       jsPsych.pluginAPI.clearAllTimeouts();
+      jsPsych.pluginAPI.cancelAllKeyboardResponses();
 
       // gather the data to store for the trial
       var trial_data = {
         "rt": response.rt,
 				"grid": JSON.stringify(trial.grid),
 				"target": JSON.stringify(trial.target),
-        "response_row": response.row,
-        "response_column": response.column,
         "correct": response.row == trial.target[0] && response.column == trial.target[1]
       };
 

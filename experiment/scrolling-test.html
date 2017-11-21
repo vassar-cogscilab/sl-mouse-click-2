@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Experiment</title>
+  <script src="jsPsych/jspsych.js"></script>
+  <script src="jsPsych/plugins/jspsych-serial-reaction-time-scrolling.js"></script>
+  <link rel="stylesheet" href="jsPsych/css/jspsych.css"></link>
+</head>
+
+<body>
+</body>
+
+<script>
+
+var timeline = [];
+
+var item_history = [];
+var color_history = [];
+var pitches = [261.63,293.66,329.63,369.99,415.30,466.16];//[369.99,369.99,369.99,369.99,369.99,369.99]//
+var target = jsPsych.randomization.sampleWithoutReplacement([0,1,2,3,4,5], 1)[0];
+
+var colors = ["#f3c300","#f3c300","#f3c300","#f3c300","#f3c300","#f3c300"]//["#f3c300", "#875692", "#f38400", "#a1caf1", "#be0032", "#c2b280"];
+
+// generating triples
+var triples = [];
+for(var i=0;i<6; i++){
+  triples[i] = jsPsych.randomization.sampleWithReplacement([0,1,2,3,4,5], 3);
+}
+
+//
+var current_triple = jsPsych.randomization.sampleWithoutReplacement([0,1,2,3,4,5], 1)[0];
+var triple_position = 0;
+var target_color = colors[current_triple];
+
+
+function getHistory(){
+  return item_history;
+}
+
+function getHistoryColor(){
+  return color_history;
+}
+
+function getTarget(){
+  return target;
+}
+
+function getTargetColor(){
+  return target_color;
+}
+
+function getPitch(){
+  return pitches[target];
+}
+
+function updateTarget(){
+  triple_position++;
+  if(triple_position==3){
+    triple_position = 0;
+    current_triple = jsPsych.randomization.sampleWithoutReplacement([0,1,2,3,4,5], 1)[0];
+  }
+  item_history = [target].concat(item_history).slice(0,4);
+  color_history = [target_color].concat(color_history).slice(0,4);
+  target = triples[current_triple][triple_position];
+  target_color = colors[current_triple];
+}
+
+var trial = {
+  type: 'serial-reaction-time-scrolling',
+  num_options: 6,
+  choices: ['d','f','g','h','j','k'],
+  pitch_frequency: getPitch,
+  target: getTarget,
+  history: getHistory,
+  history_color: getHistoryColor,
+  target_color: getTargetColor,
+  duration: 1000,
+  on_finish: function(){
+    updateTarget();
+  }
+}
+
+for(var i=0; i<100; i++){
+  timeline.push(trial);
+}
+
+jsPsych.init({
+  timeline: timeline
+});
+
+</script>
+
+</html>
